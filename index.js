@@ -4,6 +4,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -20,15 +21,22 @@ async function main() {
 	let projectName = process.argv[2]
 
 	if (!projectName) {
-		projectName = await ask('Project name: ')
+		projectName = await ask('Project name (or . for current directory): ')
 	}
 
 	rl.close()
 
 	projectName = projectName.trim() || 'my-app'
-	const targetDir = path.resolve(process.cwd(), projectName)
 
-	if (fs.existsSync(targetDir)) {
+	const targetDir = projectName === '.'
+		? process.cwd()
+		: path.resolve(process.cwd(), projectName)
+
+	const displayName = projectName === '.'
+		? path.basename(process.cwd())
+		: projectName
+
+	if (projectName !== '.' && fs.existsSync(targetDir)) {
 		console.error(`Error: directory "${projectName}" already exists.`)
 		process.exit(1)
 	}
@@ -37,22 +45,25 @@ async function main() {
 
 	copyDir(templateDir, targetDir)
 
-	// replace name in package.json
 	const pkgPath = path.join(targetDir, 'package.json')
 	const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-	pkg.name = projectName
+	pkg.name = displayName
 	fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 
-	// replace title in index.html
 	const htmlPath = path.join(targetDir, 'index.html')
 	let html = fs.readFileSync(htmlPath, 'utf-8')
-	html = html.replace(/<title>.*<\/title>/, `<title>${projectName}</title>`)
+	html = html.replace(/<title>.*<\/title>/, `<title>${displayName}</title>`)
 	fs.writeFileSync(htmlPath, html)
 
-	console.log(`\nDone! Now run:\n`)
-	console.log(`  cd ${projectName}`)
-	console.log(`  npm install`)
-	console.log(`  npm run dev\n`)
+	if (projectName !== '.') {
+		process.chdir(targetDir)
+	}
+
+	console.log(`\nInstalling dependencies...\n`)
+	execSync('npm install', { stdio: 'inherit' })
+
+	console.log(`\nStarting dev server...\n`)
+	execSync('npm run dev', { stdio: 'inherit' })
 }
 
 function copyDir(src, dest) {
