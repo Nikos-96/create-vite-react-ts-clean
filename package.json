@@ -1,0 +1,23 @@
+{
+	"name": "create-vite-react-ts-clean",
+	"version": "1.0.0",
+	"type": "module",
+	"bin": {
+		"create-vite-react-ts-clean": "index.js"
+	},
+	"files": [
+		"index.js",
+		"template"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Nikos-96/create-vite-react-ts-clean"
+	},
+	"keywords": [
+		"vite",
+		"react",
+		"typescript",
+		"template"
+	],
+	"license": "MIT"
+}
